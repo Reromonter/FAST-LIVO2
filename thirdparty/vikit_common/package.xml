@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>vikit_common</name>
+  <version>1.0.0</version>
+  <description>
+    Vision toolkit of the Robotics and Perception Group, University of Zurich
+    (ROS2/ament port, bundled with the old non-templated Sophus).
+  </description>
+
+  <maintainer email="zhengcr@connect.hku.hk">Chunran Zheng</maintainer>
+  <license>GPLv3</license>
+  <author>Christian Forster</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>eigen</depend>
+  <depend>libopencv-dev</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
