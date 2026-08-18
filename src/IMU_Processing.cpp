@@ -141,8 +141,10 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, StatesGroup &state_inout, in
     N++;
   }
   IMU_mean_acc_norm = mean_acc.norm();
-  state_inout.gravity = -mean_acc / mean_acc.norm() * G_m_s2;
-  state_inout.rot_end = Eye3d; // Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
+  // Gravity-align the world frame rather than adopting the raw initial IMU frame. 
+  state_inout.rot_end =
+      Eigen::Quaterniond::FromTwoVectors(mean_acc.normalized(), V3D(0.0, 0.0, 1.0)).toRotationMatrix();
+  state_inout.gravity = V3D(0.0, 0.0, -G_m_s2);
   state_inout.bias_g = Zero3d; // mean_gyr;
 
   last_imu = meas.imu.back();
