@@ -168,4 +168,10 @@ install(TARGETS fastlivo_mapping
 
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_visual_map_pruning test/test_visual_map_pruning.cpp)
+  target_link_libraries(test_visual_map_pruning vio lio)
+endif()
+
 ament_package()
