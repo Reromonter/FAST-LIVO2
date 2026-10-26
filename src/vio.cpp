@@ -249,6 +249,37 @@ void VIOManager::insertPointIntoVoxelMap(VisualPoint *pt_new)
   }
 }
 
+// Points that leave the view are never visited again, and each of their features keeps
+// a whole frame alive through img_, so without this the map grows with every frame.
+int VIOManager::pruneVisualMap(double now)
+{
+  if (map_point_max_age <= 0) return 0;
+
+  int removed = 0;
+  for (auto it = feat_map.begin(); it != feat_map.end();)
+  {
+    std::vector<VisualPoint *> &voxel_points = it->second->voxel_points;
+    for (auto pt_it = voxel_points.begin(); pt_it != voxel_points.end();)
+    {
+      VisualPoint *pt = *pt_it;
+      if (pt != nullptr && now - pt->last_seen_time_ <= map_point_max_age) { ++pt_it; continue; }
+      delete pt;
+      pt_it = voxel_points.erase(pt_it);
+      removed++;
+    }
+    if (voxel_points.empty())
+    {
+      delete it->second;
+      it = feat_map.erase(it);
+    }
+    else { ++it; }
+  }
+
+  // The submap still points at last frame's points, some of which may be gone now.
+  if (removed > 0) visual_submap->reset();
+  return removed;
+}
+
 void VIOManager::getWarpMatrixAffineHomography(const vk::AbstractCamera &cam, const V2D &px_ref, const V3D &xyz_ref, const V3D &normal_ref,
                                                   const SE3 &T_cur_ref, const int level_ref, Matrix2d &A_cur_ref)
 {
@@ -468,6 +499,7 @@ void VIOManager::retrieveFromVisualSparseMap(cv::Mat img, vector<pointWithVar> &
         {
           // cv::circle(img_cp, cv::Point2f(pc[0], pc[1]), 3, cv::Scalar(0, 255, 255), -1, 8);
           voxel_in_fov = true;
+          pt->last_seen_time_ = cur_img_time;
           int index = static_cast<int>(pc[1] / grid_size) * grid_n_width + static_cast<int>(pc[0] / grid_size);
           grid_num[index] = TYPE_MAP;
           Vector3d obs_vec(new_frame_->pos() - pt->pos_);
@@ -549,6 +581,7 @@ void VIOManager::retrieveFromVisualSparseMap(cv::Mat img, vector<pointWithVar> &
               // sub_map_ray_fov.push_back(pt);
 
               voxel_in_fov = true;
+              pt->last_seen_time_ = cur_img_time;
               int index = static_cast<int>(pc[1] / grid_size) * grid_n_width + static_cast<int>(pc[0] / grid_size);
               grid_num[index] = TYPE_MAP;
               Vector3d obs_vec(new_frame_->pos() - pt->pos_);
@@ -875,6 +908,7 @@ void VIOManager::generateVisualMapPoints(cv::Mat img, vector<pointWithVar> &pg)
       getImagePatch(img, pc, patch, 0);
 
       VisualPoint *pt_new = new VisualPoint(pt);
+      pt_new->last_seen_time_ = cur_img_time;
 
       Vector3d f = cam->cam2world(pc);
       Feature *ftr_new = new Feature(pt_new, patch, pc, f, new_frame_->T_f_w_, 0);
@@ -1793,6 +1827,14 @@ void VIOManager::processFrame(cv::Mat &img, vector<pointWithVar> &pg, const unor
   img_rgb = img.clone();
   img_cp = img.clone();
   // img_test = img.clone();
+
+  cur_img_time = img_time;
+  if (cur_img_time - last_prune_time >= 1.0)
+  {
+    int removed = pruneVisualMap(cur_img_time);
+    last_prune_time = cur_img_time;
+    if (removed > 0) printf("[ VIO ] Evicted %d visual map points not seen for %.1f s\n", removed, map_point_max_age);
+  }
 
   if (img.channels() == 3) cv::cvtColor(img, img, CV_BGR2GRAY);
 

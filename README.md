@@ -287,6 +287,11 @@ The source code of this package is released under the [**GPLv2**](http://www.gnu
   threw it away, and the publishers were never advertised.
 - `VoxelMapManager::pubVoxelMap` no longer creates an `ros::Rate loop(500)` and sleeps on it; that was a 2 ms stall in
   the mapping thread for no reason.
+- The visual map is pruned by age. Upstream never removed a `VisualPoint`, and every `Feature` holds its whole frame
+  through `img_`, so memory grew with every processed frame (~0.5 GB/min at 640×400, 20 Hz) until the host ran out.
+  A point is stamped whenever it projects into the view; once a second, points not seen for `vio.map_point_max_age`
+  seconds (double, default `30.0`, `<= 0` disables) are deleted along with their features and frames. Points that come
+  back into view are re-created from the LiDAR map.
 
 ### Not ported
 

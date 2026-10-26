@@ -120,6 +120,7 @@ public:
   bool is_first_frame = false;
   int grid_size, patch_size, grid_n_width, grid_n_height, patch_pyrimid_level;
   double outlier_threshold;
+  double map_point_max_age;
   double plot_time;
   int frame_cnt;
   double img_time_offset = 0.0;
