@@ -69,6 +69,7 @@ void LIVMapper::readParameters()
   patch_pyrimid_level = node_->declare_parameter<int>("vio.patch_pyrimid_level", 3);
   patch_size = node_->declare_parameter<int>("vio.patch_size", 8);
   outlier_threshold = node_->declare_parameter<double>("vio.outlier_threshold", 1000.0);
+  map_point_max_age = node_->declare_parameter<double>("vio.map_point_max_age", 30.0);
 
   exposure_time_init = node_->declare_parameter<double>("time_offset.exposure_time_init", 0.0);
   img_time_offset = node_->declare_parameter<double>("time_offset.img_time_offset", 0.0);
@@ -131,6 +132,7 @@ void LIVMapper::initializeComponents()
   vio_manager->grid_size = grid_size;
   vio_manager->patch_size = patch_size;
   vio_manager->outlier_threshold = outlier_threshold;
+  vio_manager->map_point_max_age = map_point_max_age;
   vio_manager->setImuToLidarExtrinsic(extT, extR);
   vio_manager->setLidarToCameraExtrinsic(cameraextrinR, cameraextrinT);
   vio_manager->state = &_state;

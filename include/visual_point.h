@@ -35,6 +35,7 @@ public:
   bool is_normal_initialized_;  //!< True if the normal is initialized.
   bool has_ref_patch_;          //!< True if the point has a reference patch.
   Feature *ref_patch;           //!< Reference patch of the point.
+  double last_seen_time_;       //!< Image time at which the point last projected into the camera view.
 
   VisualPoint(const Vector3d &pos);
   ~VisualPoint();
